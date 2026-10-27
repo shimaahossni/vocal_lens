@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/preset_demo_photo.dart';
 import '../theme/app_theme.dart';
 
@@ -24,37 +25,46 @@ class PresetPhotoCarousel extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4.0),
+          padding: const EdgeInsets.symmetric(horizontal: 2.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Row(
                 children: [
-                  Icon(Icons.auto_awesome_rounded, size: 16, color: theme.colorScheme.primary),
-                  const SizedBox(width: 6),
+                  Container(
+                    padding: const EdgeInsets.all(5),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(Icons.auto_awesome_rounded, size: 14, color: theme.colorScheme.primary),
+                  ),
+                  const SizedBox(width: 8),
                   Text(
-                    isArabic ? 'نماذج سريعة للاختبار' : 'Quick Test Samples',
+                    isArabic ? 'نماذج سريعة للتجربة' : 'Quick OCR Samples',
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
+                      letterSpacing: -0.2,
                       color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ],
               ),
               Text(
-                isArabic ? 'اضغط لتجربة الصوت' : 'Tap to test OCR & Voice',
+                isArabic ? 'اضغط للتجربة الفورية' : '1-tap instant test',
                 style: TextStyle(
                   fontSize: 11,
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                  fontWeight: FontWeight.w500,
+                  color: theme.colorScheme.onSurface.withOpacity(0.5),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: AppSizes.sm),
+        const SizedBox(height: AppSizes.md),
         SizedBox(
-          height: 120,
+          height: 124,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             itemCount: samples.length,
@@ -64,28 +74,39 @@ class PresetPhotoCarousel extends StatelessWidget {
               final isSelected = selectedPresetId == preset.id;
 
               return InkWell(
-                onTap: () => onSelect(preset),
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  onSelect(preset);
+                },
                 borderRadius: BorderRadius.circular(AppSizes.radiusXl),
-                child: Container(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
                   width: AppSizes.presetCardWidth,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXl),
                     border: Border.all(
                       color: isSelected
                           ? theme.colorScheme.primary
-                          : (isDark ? Colors.white.withValues(alpha: 0.1) : Colors.black.withValues(alpha: 0.08)),
-                      width: isSelected ? 2 : 1,
+                          : (isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.08)),
+                      width: isSelected ? 2.0 : 1.0,
                     ),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.08),
-                        blurRadius: 6,
-                        offset: const Offset(0, 3),
-                      ),
+                      if (isSelected)
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        )
+                      else
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.3 : 0.06),
+                          blurRadius: 8,
+                          offset: const Offset(0, 2),
+                        ),
                     ],
                   ),
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(AppSizes.radiusXl - 1),
                     child: Stack(
                       children: [
                         // Background image
@@ -99,7 +120,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Gradient shadow
+                        // Rich Gradient shadow
                         Positioned.fill(
                           child: Container(
                             decoration: BoxDecoration(
@@ -107,9 +128,11 @@ class PresetPhotoCarousel extends StatelessWidget {
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
                                 colors: [
-                                  Colors.transparent,
-                                  Colors.black.withValues(alpha: 0.85),
+                                  Colors.black.withOpacity(0.1),
+                                  Colors.black.withOpacity(0.4),
+                                  Colors.black.withOpacity(0.88),
                                 ],
+                                stops: const [0.0, 0.45, 1.0],
                               ),
                             ),
                           ),
@@ -120,10 +143,14 @@ class PresetPhotoCarousel extends StatelessWidget {
                           left: isArabic ? null : 8,
                           right: isArabic ? 8 : null,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                             decoration: BoxDecoration(
-                              color: Colors.black.withValues(alpha: 0.65),
-                              borderRadius: BorderRadius.circular(6),
+                              color: Colors.black.withOpacity(0.65),
+                              borderRadius: BorderRadius.circular(7),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.15),
+                                width: 0.8,
+                              ),
                             ),
                             child: Text(
                               preset.category,
@@ -131,6 +158,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                                 color: Colors.white,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
+                                letterSpacing: 0.2,
                               ),
                             ),
                           ),
@@ -155,22 +183,24 @@ class PresetPhotoCarousel extends StatelessWidget {
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 3),
                               Row(
                                 mainAxisAlignment: isArabic ? MainAxisAlignment.end : MainAxisAlignment.start,
                                 children: [
                                   Icon(
-                                    isSelected ? Icons.check_circle_rounded : Icons.play_arrow_rounded,
-                                    size: 13,
+                                    isSelected ? Icons.check_circle_rounded : Icons.touch_app_rounded,
+                                    size: 12,
                                     color: isSelected ? Colors.greenAccent : Colors.white70,
                                   ),
-                                  const SizedBox(width: 3),
+                                  const SizedBox(width: 4),
                                   Text(
-                                    isSelected ? (isArabic ? 'تم الاختيار' : 'Selected') : (isArabic ? 'اضغط للفحص' : 'Tap to scan'),
+                                    isSelected
+                                        ? (isArabic ? 'تم التحميل' : 'Loaded')
+                                        : (isArabic ? 'تجربة سريعة' : 'Tap to test'),
                                     style: TextStyle(
                                       color: isSelected ? Colors.greenAccent : Colors.white70,
                                       fontSize: 10,
-                                      fontWeight: FontWeight.w500,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ],

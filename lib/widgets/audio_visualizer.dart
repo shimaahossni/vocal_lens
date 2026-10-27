@@ -90,7 +90,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final idleColor = theme.colorScheme.onSurface.withValues(alpha: 0.18);
+    final idleColor = theme.colorScheme.onSurface.withOpacity(0.18);
 
     return SizedBox(
       height: widget.height,
@@ -111,7 +111,7 @@ class _AudioVisualizerState extends State<AudioVisualizer> with SingleTickerProv
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
                       colors: [
-                        widget.activeColor.withValues(alpha: 0.6),
+                        widget.activeColor.withOpacity(0.6),
                         widget.activeColor,
                       ],
                     )

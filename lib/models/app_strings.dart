@@ -86,4 +86,18 @@ class AppStrings {
       : '$words words • $chars chars';
   String audioTimeLabel(int seconds) =>
       isArabic ? '~$secondsث تسجيل' : '~$seconds s audio';
+
+  // Photo OCR Hub Strings
+  String get scanHeroTitle => isArabic ? 'مسح مستند أو صورة' : 'Scan Document or Photo';
+  String get scanHeroSubtitle => isArabic
+      ? 'التقط صورة بكاميرا هاتفك أو اختر من المعرض لاستخراج النص وسماعه بصوت طبيعي'
+      : 'Capture with your camera or pick from gallery to extract text & listen aloud';
+  String get cameraScan => isArabic ? 'مسح بالكاميرا' : 'Camera Scanner';
+  String get photoLibrary => isArabic ? 'معرض الصور' : 'Photo Library';
+  String get browseFiles => isArabic ? 'تصفح الملفات' : 'Browse Files';
+  String get orTryPreset => isArabic ? 'أو جرب نماذج فحص سريعة' : 'Or try instant sample documents';
+  String get newScan => isArabic ? 'مسح جديد' : 'New Scan';
+  String get rescan => isArabic ? 'إعادة الفحص' : 'Rescan';
+  String get listenToText => isArabic ? 'استماع للنص' : 'Listen to Text';
+  String get changeVoice => isArabic ? 'تغيير الصوت' : 'Change Voice';
 }

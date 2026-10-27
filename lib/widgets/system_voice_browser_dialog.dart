@@ -76,7 +76,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                          color: theme.colorScheme.primary.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(Icons.record_voice_over_rounded,
@@ -98,7 +98,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                             'Preview voices to find the right one',
                             style: TextStyle(
                               fontSize: 12,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
                             ),
                           ),
                         ],
@@ -158,7 +158,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                   ),
                   labelColor: Colors.white,
                   unselectedLabelColor:
-                      theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                      theme.colorScheme.onSurface.withOpacity(0.7),
                   labelStyle:
                       const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   tabs: _hasGender
@@ -210,13 +210,13 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
           children: [
             Icon(Icons.mic_off_rounded,
                 size: 40,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.3)),
+                color: theme.colorScheme.onSurface.withOpacity(0.3)),
             const SizedBox(height: 8),
             Text(
               'No matching voices found',
               style: TextStyle(
                 fontSize: 14,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
           ],
@@ -235,9 +235,9 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
             margin: const EdgeInsets.only(bottom: 10),
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.amber.withValues(alpha: 0.12),
+              color: Colors.amber.withOpacity(0.12),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              border: Border.all(color: Colors.amber.withOpacity(0.3)),
             ),
             child: Row(
               children: [
@@ -277,7 +277,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
               return Container(
                 decoration: BoxDecoration(
                   color: isCurrent
-                      ? theme.colorScheme.primary.withValues(alpha: 0.12)
+                      ? theme.colorScheme.primary.withOpacity(0.12)
                       : (isDark
                           ? const Color(0xFF1E2433)
                           : Colors.grey.shade50),
@@ -286,8 +286,8 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                     color: isCurrent
                         ? theme.colorScheme.primary
                         : (isDark
-                            ? Colors.white.withValues(alpha: 0.06)
-                            : Colors.black.withValues(alpha: 0.05)),
+                            ? Colors.white.withOpacity(0.06)
+                            : Colors.black.withOpacity(0.05)),
                   ),
                 ),
                 child: ListTile(
@@ -295,8 +295,8 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
                   leading: CircleAvatar(
                     backgroundColor: isArabicVoice
-                        ? const Color(0xFF10B981).withValues(alpha: 0.18)
-                        : theme.colorScheme.primary.withValues(alpha: 0.15),
+                        ? const Color(0xFF10B981).withOpacity(0.18)
+                        : theme.colorScheme.primary.withOpacity(0.15),
                     child: Icon(
                       isArabicVoice
                           ? Icons.language_rounded
@@ -325,7 +325,7 @@ class _SystemVoiceBrowserDialogState extends State<SystemVoiceBrowserDialog>
                     style: TextStyle(
                         fontSize: 12,
                         color: theme.colorScheme.onSurface
-                            .withValues(alpha: 0.55)),
+                            .withOpacity(0.55)),
                   ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,

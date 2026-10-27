@@ -25,13 +25,19 @@ class VoiceControlSliders extends StatelessWidget {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
+    final pitchHint = pitch < 0.95
+        ? '(Deep)'
+        : pitch > 1.05
+            ? '(High)'
+            : '(Normal)';
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF181D29) : Colors.white,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+          color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
         ),
       ),
       child: Column(
@@ -40,52 +46,59 @@ class VoiceControlSliders extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Row(
-                children: [
-                  Icon(Icons.tune_rounded, size: 18, color: theme.colorScheme.primary),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Voice Fine-Tuning',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+              Expanded(
+                child: Row(
+                  children: [
+                    Icon(Icons.tune_rounded, size: 16, color: theme.colorScheme.primary),
+                    const SizedBox(width: 7),
+                    Flexible(
+                      child: Text(
+                        'Voice Tuning',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.onSurface,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               TextButton.icon(
                 onPressed: onReset,
-                icon: const Icon(Icons.refresh_rounded, size: 14),
-                label: const Text('Reset', style: TextStyle(fontSize: 12)),
+                icon: const Icon(Icons.refresh_rounded, size: 13),
+                label: const Text('Reset', style: TextStyle(fontSize: 11)),
                 style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   minimumSize: Size.zero,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
           // Pitch slider
           _buildSliderRow(
             context: context,
-            label: 'Voice Pitch (Frequency)',
+            label: 'Voice Pitch',
             icon: Icons.graphic_eq_rounded,
             value: pitch,
             min: 0.5,
             max: 2.0,
-            valueDisplay: '${pitch.toStringAsFixed(2)}x ${pitch < 1.0 ? "(Deeper/Masculine)" : "(Higher/Feminine)"}',
+            valueDisplay: '${pitch.toStringAsFixed(2)}x $pitchHint',
             onChanged: onPitchChanged,
             accentColor: const Color(0xFF6366F1),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Speed slider
           _buildSliderRow(
             context: context,
-            label: 'Speaking Speed (Rate)',
+            label: 'Speaking Speed',
             icon: Icons.speed_rounded,
             value: rate,
             min: 0.25,
@@ -94,12 +107,12 @@ class VoiceControlSliders extends StatelessWidget {
             onChanged: onRateChanged,
             accentColor: const Color(0xFF0EA5E9),
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
 
           // Volume slider
           _buildSliderRow(
             context: context,
-            label: 'Speech Volume',
+            label: 'Volume',
             icon: Icons.volume_up_rounded,
             value: volume,
             min: 0.0,
@@ -132,24 +145,31 @@ class VoiceControlSliders extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(icon, size: 14, color: accentColor),
-                const SizedBox(width: 6),
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(icon, size: 14, color: accentColor),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface.withOpacity(0.8),
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.12),
+                color: accentColor.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(6),
               ),
               child: Text(
@@ -166,9 +186,9 @@ class VoiceControlSliders extends StatelessWidget {
         SliderTheme(
           data: SliderTheme.of(context).copyWith(
             activeTrackColor: accentColor,
-            inactiveTrackColor: accentColor.withValues(alpha: 0.15),
+            inactiveTrackColor: accentColor.withOpacity(0.15),
             thumbColor: accentColor,
-            overlayColor: accentColor.withValues(alpha: 0.2),
+            overlayColor: accentColor.withOpacity(0.2),
             trackHeight: 3.5,
             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6.5),
           ),

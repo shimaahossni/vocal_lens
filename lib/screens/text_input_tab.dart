@@ -31,7 +31,7 @@ class _TextInputTabState extends State<TextInputTab> {
 
   final List<Map<String, String>> _englishPresets = [
     {
-      'title': '💡 Perseverance Quote',
+      'title': '💡 Perseverance',
       'text':
           'Success is not final, failure is not fatal: it is the courage to continue that counts. Believe you can and you are halfway there.',
     },
@@ -54,7 +54,7 @@ class _TextInputTabState extends State<TextInputTab> {
 
   final List<Map<String, String>> _arabicPresets = [
     {
-      'title': '📜 حكمة عربية ملهمة',
+      'title': '📜 حكمة ملهمة',
       'text':
           'العلم يبني بيوتاً لا عماد لها، والجهل يهدم بيوت العز والشرف. لا تحسبن العلم ينفع وحده ما لم يتوج ربه بخلاق.',
     },
@@ -76,10 +76,10 @@ class _TextInputTabState extends State<TextInputTab> {
   ];
 
   void _applySample(String sampleText) {
+    HapticFeedback.lightImpact();
     widget.textController.text = sampleText;
     widget.onTextUpdated(sampleText);
 
-    // If applied text is Arabic, auto-switch to Arabic voice if needed
     if (TtsService.isArabicString(sampleText) && !widget.isArabic) {
       widget.ttsService.applyPersona(VoicePersona.arabicPersonas[0]);
     }
@@ -88,6 +88,7 @@ class _TextInputTabState extends State<TextInputTab> {
   }
 
   Future<void> _pasteFromClipboard() async {
+    HapticFeedback.selectionClick();
     final data = await Clipboard.getData('text/plain');
     if (data?.text != null && data!.text!.isNotEmpty) {
       widget.textController.text = data.text!;
@@ -98,7 +99,51 @@ class _TextInputTabState extends State<TextInputTab> {
       }
 
       setState(() {});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle_outline_rounded, color: Colors.greenAccent, size: 18),
+                const SizedBox(width: 8),
+                Text(widget.isArabic ? 'تم لصق النص بنجاح' : 'Text pasted from clipboard'),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            duration: const Duration(seconds: 1),
+          ),
+        );
+      }
     }
+  }
+
+  void _copyToClipboard() {
+    final text = widget.textController.text.trim();
+    if (text.isEmpty) return;
+    HapticFeedback.selectionClick();
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.copy_rounded, color: Colors.white, size: 18),
+            const SizedBox(width: 8),
+            Text(widget.isArabic ? 'تم نسخ النص إلى الحافظة' : 'Text copied to clipboard'),
+          ],
+        ),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        duration: const Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _clearText() {
+    HapticFeedback.selectionClick();
+    widget.textController.clear();
+    widget.onTextUpdated('');
+    setState(() {});
   }
 
   @override
@@ -107,64 +152,89 @@ class _TextInputTabState extends State<TextInputTab> {
     final isDark = theme.brightness == Brightness.dark;
     final isRtlText = TtsService.isArabicString(widget.textController.text) || widget.isArabic;
     final presets = widget.isArabic ? _arabicPresets : _englishPresets;
+    final persona = widget.ttsService.currentPersona;
 
     final wordCount = widget.textController.text.trim().isEmpty
         ? 0
         : widget.textController.text.trim().split(RegExp(r'\s+')).length;
     final readingTimeSeconds = (wordCount / 2.5).ceil();
+    final hasText = widget.textController.text.trim().isNotEmpty;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
         AppSizes.screenPadding,
-        AppSizes.md,
+        AppSizes.sm,
         AppSizes.screenPadding,
         AppSizes.playerBarClearance,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Sample Preset Pills
+          // Instant Inspiration Presets Bar
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(Icons.bolt_rounded, size: 16, color: theme.colorScheme.primary),
+                  const Icon(Icons.bolt_rounded, size: 16, color: AppColors.secondary),
                   const SizedBox(width: 6),
                   Text(
                     strings.instantSampleTexts,
                     style: TextStyle(
-                      fontSize: 13,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onSurface,
+                      color: theme.colorScheme.onSurface.withOpacity(0.9),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 8),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
+                physics: const BouncingScrollPhysics(),
                 child: Row(
                   children: presets.map((preset) {
                     final isCurrent = widget.textController.text == preset['text'];
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
-                      child: ActionChip(
-                        label: Text(preset['title']!),
-                        backgroundColor: isCurrent
-                            ? theme.colorScheme.primary.withValues(alpha: 0.18)
-                            : (isDark ? const Color(0xFF1E2433) : Colors.white),
-                        side: BorderSide(
-                          color: isCurrent
-                              ? theme.colorScheme.primary
-                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.08)),
+                      child: InkWell(
+                        onTap: () => _applySample(preset['text']!),
+                        borderRadius: BorderRadius.circular(14),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            gradient: isCurrent ? AppColors.primaryGradient : null,
+                            color: isCurrent
+                                ? null
+                                : (isDark ? AppColors.darkCard : Colors.white),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isCurrent
+                                  ? AppColors.primary
+                                  : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
+                            ),
+                            boxShadow: isCurrent
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.primary.withOpacity(0.3),
+                                      blurRadius: 8,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Text(
+                            preset['title']!,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
+                              color: isCurrent
+                                  ? Colors.white
+                                  : theme.colorScheme.onSurface.withOpacity(0.85),
+                            ),
+                          ),
                         ),
-                        labelStyle: TextStyle(
-                          fontSize: 12,
-                          fontWeight: isCurrent ? FontWeight.bold : FontWeight.w500,
-                          color: isCurrent ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                        ),
-                        onPressed: () => _applySample(preset['text']!),
                       ),
                     );
                   }).toList(),
@@ -172,39 +242,57 @@ class _TextInputTabState extends State<TextInputTab> {
               ),
             ],
           ),
-          const SizedBox(height: AppSizes.sectionGap),
+          const SizedBox(height: 16),
 
-          // Main Text Editor Box
-          Container(
+          // Main Hero Text Editor Card
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             padding: const EdgeInsets.all(AppSizes.cardInset),
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF181D29) : Colors.white,
-              borderRadius: BorderRadius.circular(20),
+              color: isDark ? AppColors.darkCard : Colors.white,
+              borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06),
+                color: hasText
+                    ? AppColors.primary.withOpacity(0.35)
+                    : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
+                width: hasText ? 1.5 : 1.0,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 3),
+                  color: Colors.black.withOpacity(isDark ? 0.35 : 0.06),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
                 ),
+                if (hasText)
+                  BoxShadow(
+                    color: AppColors.primary.withOpacity(0.12),
+                    blurRadius: 14,
+                    offset: const Offset(0, 2),
+                  ),
               ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Editor Header & Quick Toolbelt
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Row(
                       children: [
-                        Icon(Icons.edit_note_rounded, size: 20, color: theme.colorScheme.primary),
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.edit_note_rounded, size: 16, color: AppColors.primary),
+                        ),
                         const SizedBox(width: 8),
                         Text(
                           strings.textToSpeak,
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 13.5,
                             fontWeight: FontWeight.bold,
                             color: theme.colorScheme.onSurface,
                           ),
@@ -213,30 +301,54 @@ class _TextInputTabState extends State<TextInputTab> {
                     ),
                     Row(
                       children: [
+                        // Copy button
+                        if (hasText)
+                          IconButton(
+                            tooltip: 'Copy text',
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            icon: Icon(
+                              Icons.copy_rounded,
+                              size: 16,
+                              color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            ),
+                            onPressed: _copyToClipboard,
+                          ),
+                        // Paste button
                         IconButton(
                           tooltip: 'Paste from clipboard',
-                          icon: const Icon(Icons.paste_rounded, size: 18),
+                          padding: const EdgeInsets.all(6),
+                          constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                          icon: Icon(
+                            Icons.paste_rounded,
+                            size: 16,
+                            color: AppColors.primary.withOpacity(0.85),
+                          ),
                           onPressed: _pasteFromClipboard,
                         ),
-                        IconButton(
-                          tooltip: strings.clear,
-                          icon: const Icon(Icons.clear_all_rounded, size: 18),
-                          onPressed: () {
-                            widget.textController.clear();
-                            widget.onTextUpdated('');
-                            setState(() {});
-                          },
-                        ),
+                        // Clear button
+                        if (hasText)
+                          IconButton(
+                            tooltip: strings.clear,
+                            padding: const EdgeInsets.all(6),
+                            constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              size: 16,
+                              color: AppColors.stop.withOpacity(0.7),
+                            ),
+                            onPressed: _clearText,
+                          ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: AppSizes.sm),
+                const SizedBox(height: 12),
 
                 // Text Input Area
                 TextField(
                   controller: widget.textController,
-                  maxLines: 8,
+                  maxLines: 7,
                   minLines: 4,
                   textDirection: isRtlText ? TextDirection.rtl : TextDirection.ltr,
                   onChanged: (val) {
@@ -248,45 +360,61 @@ class _TextInputTabState extends State<TextInputTab> {
                     hintText: strings.textInputHint,
                     hintStyle: TextStyle(
                       fontSize: 13,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.35),
+                      color: theme.colorScheme.onSurface.withOpacity(0.35),
                     ),
                     filled: true,
-                    fillColor: isDark ? const Color(0xFF131722) : Colors.grey.shade50,
-                    contentPadding: const EdgeInsets.all(16),
-                    border: OutlineInputBorder(
+                    fillColor: isDark ? AppColors.darkInput : const Color(0xFFF8FAFC),
+                    contentPadding: const EdgeInsets.all(14),
+                    enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.05),
+                        color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04),
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: const BorderSide(
+                        color: AppColors.primary,
+                        width: 1.5,
                       ),
                     ),
                   ),
                 ),
-                const SizedBox(height: AppSizes.lg),
+                const SizedBox(height: 12),
 
                 // Stats Bar
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '$wordCount ${widget.isArabic ? "كلمة" : "words"} • ${widget.textController.text.length} ${widget.isArabic ? "حرف" : "chars"}',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '$wordCount ${widget.isArabic ? "كلمة" : "words"} • ${widget.textController.text.length} ${widget.isArabic ? "حرف" : "chars"}',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: theme.colorScheme.onSurface.withOpacity(0.65),
+                        ),
                       ),
                     ),
                     Row(
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.timer_outlined,
                           size: 13,
-                          color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                          color: AppColors.accentCyan,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          '~$readingTimeSeconds${widget.isArabic ? "ث تسجيل" : "s audio"}',
-                          style: TextStyle(
+                          '~$readingTimeSeconds${widget.isArabic ? "ث صوت" : "s voice"}',
+                          style: const TextStyle(
                             fontSize: 11,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.accentCyan,
                           ),
                         ),
                       ],
@@ -296,50 +424,82 @@ class _TextInputTabState extends State<TextInputTab> {
               ],
             ),
           ),
-          const SizedBox(height: AppSizes.sectionGap),
+          const SizedBox(height: 18),
 
-          // Voice Persona Selection Section
+          // Voice Persona Selection Carousel
           VoicePersonaSelector(
             ttsService: widget.ttsService,
             isArabic: widget.isArabic,
             strings: strings,
           ),
+          const SizedBox(height: 14),
 
-          // Big Master Speak Button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton.icon(
-              onPressed: widget.textController.text.trim().isEmpty ? null : widget.onTriggerSpeak,
-              icon: Icon(
-                widget.ttsService.isPlaying
-                    ? Icons.pause_rounded
-                    : widget.ttsService.isPaused
-                        ? Icons.play_arrow_rounded
-                        : Icons.volume_up_rounded,
-                size: 22,
+          // Primary Speak Action Card
+          InkWell(
+            onTap: !hasText
+                ? null
+                : () {
+                    HapticFeedback.mediumImpact();
+                    widget.onTriggerSpeak();
+                  },
+            borderRadius: BorderRadius.circular(20),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 18),
+              decoration: BoxDecoration(
+                gradient: hasText
+                    ? LinearGradient(
+                        colors: [persona.accentColor, persona.accentColor.withOpacity(0.85)],
+                      )
+                    : null,
+                color: hasText
+                    ? null
+                    : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05)),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: hasText
+                    ? [
+                        BoxShadow(
+                          color: persona.accentColor.withOpacity(0.35),
+                          blurRadius: 14,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : null,
               ),
-              label: Text(
-                widget.ttsService.isPlaying
-                    ? strings.pausePlayback
-                    : widget.ttsService.isPaused
-                        ? strings.resumePlayback
-                        : strings.speakNowButton(
-                        widget.isArabic
-                            ? widget.ttsService.currentPersona.nameArabic
-                            : widget.ttsService.currentPersona.name,
-                        widget.ttsService.currentPersona.gender == VoiceGender.male
-                            ? strings.man
-                            : strings.woman,
-                      ),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: widget.ttsService.currentPersona.accentColor,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                minimumSize: const Size(0, AppSizes.minTouchTarget),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                elevation: 4,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    widget.ttsService.isPlaying
+                        ? Icons.pause_rounded
+                        : widget.ttsService.isPaused
+                            ? Icons.play_arrow_rounded
+                            : Icons.volume_up_rounded,
+                    color: hasText ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.4),
+                    size: 22,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.ttsService.isPlaying
+                        ? strings.pausePlayback
+                        : widget.ttsService.isPaused
+                            ? strings.resumePlayback
+                            : strings.speakNowButton(
+                                widget.isArabic
+                                    ? persona.nameArabic
+                                    : persona.name,
+                                persona.gender == VoiceGender.male
+                                    ? strings.man
+                                    : strings.woman,
+                              ),
+                    style: TextStyle(
+                      color: hasText ? Colors.white : theme.colorScheme.onSurface.withOpacity(0.4),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -347,5 +507,4 @@ class _TextInputTabState extends State<TextInputTab> {
       ),
     );
   }
-
 }

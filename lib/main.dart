@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
+import 'theme/app_colors.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,50 +26,59 @@ class _VocalLensAppState extends State<VocalLensApp> {
 
   @override
   Widget build(BuildContext context) {
-    // Premium Dark Theme Palette
+    // Ultra-clean font styling
+    final fontName = GoogleFonts.plusJakartaSans().fontFamily;
+
+    // Premium Deep Dark Theme
     final darkTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.dark,
-      scaffoldBackgroundColor: const Color(0xFF0F131D),
+      scaffoldBackgroundColor: AppColors.darkBg,
       colorScheme: const ColorScheme.dark(
-        primary: Color(0xFF6366F1), // Electric Indigo
+        primary: AppColors.primary,
         onPrimary: Colors.white,
-        secondary: Color(0xFFEC4899), // Pink / Rose
+        secondary: AppColors.secondary,
         onSecondary: Colors.white,
-        tertiary: Color(0xFF0EA5E9), // Sky Blue
-        surface: Color(0xFF161B26),
-        onSurface: Color(0xFFF3F4F6),
-        surfaceContainerHighest: Color(0xFF1E2433),
+        tertiary: AppColors.accentCyan,
+        surface: AppColors.darkSurface,
+        onSurface: Color(0xFFF1F5F9),
+        surfaceContainerHighest: AppColors.darkCard,
       ),
-      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      fontFamily: fontName,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF131722),
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        scrolledUnderElevation: 0,
       ),
+      cardColor: AppColors.darkCard,
+      dividerColor: AppColors.darkBorder,
     );
 
-    // Premium Light Theme Palette
+    // Premium Crisp Light Theme
     final lightTheme = ThemeData(
       useMaterial3: true,
       brightness: Brightness.light,
-      scaffoldBackgroundColor: const Color(0xFFF8FAFC),
+      scaffoldBackgroundColor: AppColors.lightBg,
       colorScheme: const ColorScheme.light(
-        primary: Color(0xFF4F46E5),
+        primary: AppColors.primaryDark,
         onPrimary: Colors.white,
-        secondary: Color(0xFFDB2777),
+        secondary: AppColors.secondary,
         onSecondary: Colors.white,
-        tertiary: Color(0xFF0284C7),
-        surface: Colors.white,
+        tertiary: AppColors.accentCyan,
+        surface: AppColors.lightSurface,
         onSurface: Color(0xFF0F172A),
-        surfaceContainerHighest: Color(0xFFF1F5F9),
+        surfaceContainerHighest: AppColors.lightInput,
       ),
-      fontFamily: GoogleFonts.plusJakartaSans().fontFamily,
+      fontFamily: fontName,
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: false,
+        scrolledUnderElevation: 0,
       ),
+      cardColor: AppColors.lightCard,
+      dividerColor: AppColors.lightBorder,
     );
 
     return MaterialApp(

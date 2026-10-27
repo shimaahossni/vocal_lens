@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/app_strings.dart';
 import '../models/speech_history_item.dart';
 import '../models/voice_persona.dart';
@@ -39,6 +40,11 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
     _ttsService.initialize();
     _ttsService.addListener(_onTtsUpdated);
   }
@@ -48,6 +54,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   void _toggleLanguage() {
+    HapticFeedback.lightImpact();
     setState(() {
       _isArabic = !_isArabic;
       _ttsService.setArabicMode(_isArabic);
@@ -72,8 +79,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
   }
 
   Future<void> _speakCurrentText({HistorySourceType source = HistorySourceType.textInput}) async {
-    // If audio is paused, tapping play should continue from where it stopped
-    // instead of restarting the whole text from the beginning.
     if (_ttsService.isPaused) {
       await _ttsService.resume();
       return;
@@ -81,9 +86,18 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
     final text = _currentActiveText.trim();
     if (text.isEmpty) {
+      HapticFeedback.selectionClick();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(strings.enterTextAlert),
+          content: Row(
+            children: [
+              const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              Expanded(child: Text(strings.enterTextAlert)),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
           duration: const Duration(seconds: 2),
         ),
       );
@@ -98,44 +112,54 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     final historyItem = SpeechHistoryItem(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       text: text,
-      source: _tabController.index == 0 ? HistorySourceType.photo : HistorySourceType.textInput,
       timestamp: DateTime.now(),
       voicePersonaName: personaName,
+      source: source,
     );
 
     setState(() {
       _history.insert(0, historyItem);
-      if (_history.length > 50) _history.removeLast();
+      if (_history.length > 50) {
+        _history.removeLast();
+      }
     });
 
     await _ttsService.speak(text);
   }
 
   void _openHistorySheet() {
+    HapticFeedback.lightImpact();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) => HistoryBottomSheet(
         items: _history,
-        onClearAll: () => setState(() => _history.clear()),
+        onClearAll: () {
+          setState(() => _history.clear());
+          Navigator.pop(context);
+        },
         onSelect: (item) {
+          Navigator.pop(context);
           if (_tabController.index == 0) {
             _photoTextController.text = item.text;
           } else {
             _manualTextController.text = item.text;
           }
           setState(() {});
-          _speakCurrentText();
+          _speakCurrentText(source: item.source);
         },
       ),
     );
   }
 
   void _openSystemVoicesDialog() {
+    HapticFeedback.lightImpact();
     showDialog(
       context: context,
-      builder: (context) => SystemVoiceBrowserDialog(ttsService: _ttsService),
+      builder: (context) => SystemVoiceBrowserDialog(
+        ttsService: _ttsService,
+      ),
     );
   }
 
@@ -150,18 +174,24 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           elevation: 0,
-          backgroundColor: isDark ? const Color(0xFF131722) : Colors.white,
+          backgroundColor: isDark ? AppColors.darkSurface.withOpacity(0.9) : Colors.white.withOpacity(0.9),
+          titleSpacing: AppSizes.screenPadding,
           title: Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(7),
+                padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFFEC4899)],
-                  ),
+                  gradient: AppColors.brandGradient,
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.primary.withOpacity(0.35),
+                      blurRadius: 10,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
-                child: const Icon(Icons.record_voice_over_rounded, color: Colors.white, size: 20),
+                child: const Icon(Icons.record_voice_over_rounded, color: Colors.white, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -177,25 +207,35 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              fontSize: 18,
+                              fontSize: 17,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: -0.5,
+                              letterSpacing: -0.4,
                             ),
                           ),
                         ),
                         const SizedBox(width: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.primary.withValues(alpha: 0.15),
+                            gradient: LinearGradient(
+                              colors: [
+                                AppColors.primary.withOpacity(0.2),
+                                AppColors.secondary.withOpacity(0.2),
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: AppColors.primary.withOpacity(0.35),
+                              width: 0.8,
+                            ),
                           ),
                           child: Text(
                             strings.aiBadge,
-                            style: TextStyle(
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
-                              color: theme.colorScheme.primary,
+                            style: const TextStyle(
+                              fontSize: 8.5,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.primary,
+                              letterSpacing: 0.5,
                             ),
                           ),
                         ),
@@ -207,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: 10,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
+                        color: theme.colorScheme.onSurface.withOpacity(0.55),
                       ),
                     ),
                   ],
@@ -216,66 +256,65 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             ],
           ),
           actions: [
-            // Language Switcher Toggle Pill [EN | عربي]
+            // Modern Animated Language Switcher Pill
             InkWell(
               onTap: _toggleLanguage,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(20),
               child: Container(
                 margin: const EdgeInsets.symmetric(vertical: 10),
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1E2433) : Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(12),
+                  color: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
+                  borderRadius: BorderRadius.circular(20),
                   border: Border.all(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.3),
+                    color: AppColors.primary.withOpacity(0.35),
+                    width: 1,
                   ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_isArabic ? '🇸🇦' : '🇺🇸', style: const TextStyle(fontSize: 13)),
+                    Text(_isArabic ? '🇸🇦' : '🇺🇸', style: const TextStyle(fontSize: 12)),
                     const SizedBox(width: 4),
                     Text(
                       _isArabic ? 'عربي' : 'EN',
-                      style: TextStyle(
-                        fontSize: 12,
+                      style: const TextStyle(
+                        fontSize: 11,
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
                 ),
               ),
             ),
-            const SizedBox(width: 6),
+            const SizedBox(width: 4),
 
-            // Device voices browser
-            IconButton(
-              tooltip: strings.deviceVoices,
-              icon: const Icon(Icons.settings_voice_rounded, size: 21),
-              onPressed: _openSystemVoicesDialog,
-            ),
-            // History
+            // History with count badge
             Stack(
               alignment: Alignment.center,
               children: [
                 IconButton(
                   tooltip: strings.history,
-                  icon: const Icon(Icons.history_rounded, size: 22),
+                  padding: const EdgeInsets.all(8),
+                  constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+                  icon: const Icon(Icons.history_rounded, size: 20),
                   onPressed: _openHistorySheet,
                 ),
                 if (_history.isNotEmpty)
                   Positioned(
-                    top: 10,
-                    right: 10,
+                    top: 6,
+                    right: 6,
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: const BoxDecoration(
-                        color: Color(0xFFEC4899),
+                        color: AppColors.secondary,
                         shape: BoxShape.circle,
                       ),
+                      constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
                       child: Text(
                         '${_history.length}',
+                        textAlign: TextAlign.center,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 9,
@@ -286,46 +325,92 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ),
               ],
             ),
-            // Dark/Light toggle
-            IconButton(
-              tooltip: widget.isDarkMode ? 'Light Mode' : 'Dark Mode',
-              icon: Icon(widget.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded, size: 21),
-              onPressed: widget.onToggleTheme,
+
+            // More Options Menu (Consolidates Device Voices & Theme)
+            PopupMenuButton<String>(
+              tooltip: 'Options',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(minWidth: 38, minHeight: 38),
+              icon: const Icon(Icons.more_vert_rounded, size: 20),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              color: isDark ? AppColors.darkCard : Colors.white,
+              onSelected: (value) {
+                if (value == 'theme') {
+                  HapticFeedback.selectionClick();
+                  widget.onToggleTheme();
+                } else if (value == 'voices') {
+                  _openSystemVoicesDialog();
+                }
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  value: 'theme',
+                  child: Row(
+                    children: [
+                      Icon(
+                        widget.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                        size: 18,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(
+                        widget.isDarkMode ? 'Light Mode' : 'Dark Mode',
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+                PopupMenuItem(
+                  value: 'voices',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.settings_voice_rounded, size: 18, color: AppColors.secondary),
+                      const SizedBox(width: 10),
+                      Text(
+                        strings.deviceVoices,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
+            const SizedBox(width: 8),
           ],
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(56),
             child: Container(
-              margin: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.sm),
-              padding: const EdgeInsets.all(AppSizes.xs),
+              margin: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding, vertical: 6),
+              padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF1E2433) : Colors.grey.shade100,
+                color: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                ),
               ),
               child: TabBar(
                 controller: _tabController,
                 indicatorSize: TabBarIndicatorSize.tab,
                 dividerColor: Colors.transparent,
                 indicator: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF6366F1), Color(0xFF4F46E5)],
-                  ),
+                  gradient: AppColors.primaryGradient,
                   borderRadius: BorderRadius.circular(12),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+                      color: AppColors.primary.withOpacity(0.35),
                       blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.65),
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 tabs: [
                   Tab(
-                    icon: Row(
+                    height: 38,
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.camera_alt_rounded, size: 16),
@@ -335,7 +420,8 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                     ),
                   ),
                   Tab(
-                    icon: Row(
+                    height: 38,
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.edit_note_rounded, size: 18),
@@ -374,7 +460,29 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               ],
             ),
 
-            // Sticky Bottom Voice Player Bar
+            // Bottom Gradient Fade so content scrolls smoothly under floating player
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: 100,
+              child: IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        theme.scaffoldBackgroundColor.withOpacity(0.0),
+                        theme.scaffoldBackgroundColor.withOpacity(0.85),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Floating Glassmorphic Voice Player Bar
             Positioned(
               left: 0,
               right: 0,

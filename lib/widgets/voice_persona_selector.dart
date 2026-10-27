@@ -28,25 +28,31 @@ class VoicePersonaSelector extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(Icons.spatial_audio_rounded, size: AppSizes.iconSm, color: theme.colorScheme.primary),
-                const SizedBox(width: AppSizes.sm),
-                Text(
-                  strings.selectVoiceTitle,
-                  style: TextStyle(
-                    fontSize: AppSizes.fontMdLg,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(Icons.spatial_audio_rounded, size: AppSizes.iconSm, color: theme.colorScheme.primary),
+                  const SizedBox(width: AppSizes.sm),
+                  Flexible(
+                    child: Text(
+                      strings.selectVoiceTitle,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: AppSizes.fontMdLg,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: AppSizes.sm),
             Text(
               '${personas.length} ${strings.stylesAvailable}',
               style: TextStyle(
                 fontSize: AppSizes.fontMd,
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                color: theme.colorScheme.onSurface.withOpacity(0.5),
               ),
             ),
           ],

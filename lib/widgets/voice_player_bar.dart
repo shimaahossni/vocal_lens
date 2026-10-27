@@ -1,5 +1,6 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import '../models/voice_persona.dart';
+import 'package:flutter/services.dart';
 import '../models/app_strings.dart';
 import '../services/tts_service.dart';
 import '../theme/app_theme.dart';
@@ -26,9 +27,9 @@ class VoicePlayerBar extends StatefulWidget {
   State<VoicePlayerBar> createState() => _VoicePlayerBarState();
 }
 
-class _VoicePlayerBarState extends State<VoicePlayerBar> {
+class _VoicePlayerBarState extends State<VoicePlayerBar> with SingleTickerProviderStateMixin {
   bool _showFineTuning = false;
-  bool _showSpeedScroll = true;
+  bool _showSpeedScroll = false;
 
   @override
   void initState() {
@@ -55,298 +56,384 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> {
     if (mounted) setState(() {});
   }
 
+  void _toggleSpeed() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _showSpeedScroll = !_showSpeedScroll;
+      if (_showSpeedScroll) _showFineTuning = false;
+    });
+  }
+
+  void _toggleFineTuning() {
+    HapticFeedback.selectionClick();
+    setState(() {
+      _showFineTuning = !_showFineTuning;
+      if (_showFineTuning) _showSpeedScroll = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final persona = widget.ttsService.currentPersona;
     final strings = AppStrings(isArabic: widget.isArabic);
+    final isPlaying = widget.ttsService.isPlaying;
+    final isPaused = widget.ttsService.isPaused;
 
     final displayName = widget.ttsService.selectedSystemVoice?['name'] ??
         (widget.isArabic ? persona.nameArabic : persona.name);
     final displayTag = widget.isArabic ? persona.tagArabic : persona.tag;
-    
-    final sayItText = widget.ttsService.isPlaying
+
+    final sayItText = isPlaying
         ? strings.pause
-        : widget.ttsService.isPaused
+        : isPaused
             ? strings.resumePlayback
             : strings.sayIt;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkBg : Colors.white,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppSizes.radiusRound)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.45 : 0.12),
-            blurRadius: AppSizes.radiusXxl,
-            offset: const Offset(0, -6),
-          ),
-        ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(AppSizes.xxl, AppSizes.xl, AppSizes.xxl, AppSizes.lg + AppSizes.xs),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Expandable Speed Scroll Section
-              if (_showSpeedScroll) ...[
-                SpeedScrollSelector(
-                  currentRate: widget.ttsService.rate,
-                  accentColor: persona.accentColor,
-                  showSlider: true,
-                  isArabic: widget.isArabic,
-                  onRateChanged: (v) => widget.ttsService.setRate(v),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              curve: Curves.easeOutCubic,
+              decoration: BoxDecoration(
+                color: isDark
+                    ? AppColors.darkSurface.withOpacity(0.85)
+                    : Colors.white.withOpacity(0.92),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isPlaying
+                      ? persona.accentColor.withOpacity(0.4)
+                      : isDark
+                          ? Colors.white.withOpacity(0.08)
+                          : Colors.black.withOpacity(0.06),
+                  width: isPlaying ? 1.5 : 1.0,
                 ),
-                const SizedBox(height: AppSizes.lg),
-              ],
-
-              // Expandable fine tuning sliders
-              if (_showFineTuning) ...[
-                VoiceControlSliders(
-                  pitch: widget.ttsService.pitch,
-                  rate: widget.ttsService.rate,
-                  volume: widget.ttsService.volume,
-                  onPitchChanged: (v) => widget.ttsService.setPitch(v),
-                  onRateChanged: (v) => widget.ttsService.setRate(v),
-                  onVolumeChanged: (v) => widget.ttsService.setVolume(v),
-                  onReset: () => widget.ttsService.applyPersona(widget.ttsService.currentPersona),
-                ),
-                const SizedBox(height: AppSizes.xl),
-              ],
-
-              // Spoken word progress preview
-              if (widget.ttsService.isPlaying && widget.ttsService.currentSpokenWord.isNotEmpty) ...[
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.xl, vertical: AppSizes.xs),
-                  decoration: BoxDecoration(
-                    color: persona.accentColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppSizes.lg),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.45 : 0.08),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.record_voice_over_rounded, size: AppSizes.iconLg, color: persona.accentColor),
-                      const SizedBox(width: AppSizes.sm),
-                      Text(
-                        strings.speakingWord(widget.ttsService.currentSpokenWord),
-                        style: TextStyle(
-                          fontSize: AppSizes.fontBase,
-                          fontWeight: FontWeight.bold,
-                          color: persona.accentColor,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSizes.md),
-              ],
-
-              // Wave visualizer
-              AudioVisualizer(
-                isPlaying: widget.ttsService.isPlaying,
-                isPaused: widget.ttsService.isPaused,
-                activeColor: persona.accentColor,
-                height: AppSizes.audioVisualizerH,
-                barCount: 28,
+                  if (isPlaying)
+                    BoxShadow(
+                      color: persona.accentColor.withOpacity(0.22),
+                      blurRadius: 18,
+                      offset: const Offset(0, 4),
+                    ),
+                ],
               ),
-              const SizedBox(height: AppSizes.lg),
-
-              // Control Bar Row
-              Row(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Expanded(
-                    child: InkWell(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (c) => SystemVoiceBrowserDialog(ttsService: widget.ttsService),
-                        );
-                      },
-                      borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: AppSizes.lg, vertical: AppSizes.md),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCard : Colors.grey.shade100,
-                          borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-                          border: Border.all(
-                            color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            CircleAvatar(
-                              radius: AppSizes.personaAvatarRadius,
-                              backgroundColor: persona.accentColor.withValues(alpha: 0.2),
-                              child: Icon(persona.icon, size: AppSizes.iconSm, color: persona.accentColor),
+                  // Animated expansion drawers
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 240),
+                    curve: Curves.easeInOutCubic,
+                    child: Column(
+                      children: [
+                        if (_showSpeedScroll) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                            child: SpeedScrollSelector(
+                              currentRate: widget.ttsService.rate,
+                              accentColor: persona.accentColor,
+                              showSlider: true,
+                              isArabic: widget.isArabic,
+                              onRateChanged: (v) => widget.ttsService.setRate(v),
                             ),
-                            const SizedBox(width: AppSizes.md),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                mainAxisSize: MainAxisSize.min,
+                          ),
+                          Divider(
+                            height: 12,
+                            thickness: 0.5,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : Colors.black.withOpacity(0.06),
+                          ),
+                        ],
+                        if (_showFineTuning) ...[
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 14, 16, 4),
+                            child: VoiceControlSliders(
+                              pitch: widget.ttsService.pitch,
+                              rate: widget.ttsService.rate,
+                              volume: widget.ttsService.volume,
+                              onPitchChanged: (v) => widget.ttsService.setPitch(v),
+                              onRateChanged: (v) => widget.ttsService.setRate(v),
+                              onVolumeChanged: (v) => widget.ttsService.setVolume(v),
+                              onReset: () => widget.ttsService.applyPersona(widget.ttsService.currentPersona),
+                            ),
+                          ),
+                          Divider(
+                            height: 12,
+                            thickness: 0.5,
+                            color: isDark
+                                ? Colors.white.withOpacity(0.08)
+                                : Colors.black.withOpacity(0.06),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+
+                  // Mini Waveform Visualizer & Spoken Word Indicator
+                  if (isPlaying || isPaused) ...[
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 8, 14, 2),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: AudioVisualizer(
+                              isPlaying: isPlaying,
+                              isPaused: isPaused,
+                              activeColor: persona.accentColor,
+                              height: 22,
+                              barCount: 26,
+                            ),
+                          ),
+                          if (widget.ttsService.currentSpokenWord.isNotEmpty) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: persona.accentColor.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                widget.ttsService.currentSpokenWord,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold,
+                                  color: persona.accentColor,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+
+                  // Main Interactive Mini-Player Row
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    child: Row(
+                      children: [
+                        // Left: Voice Persona Switcher Chip
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              HapticFeedback.lightImpact();
+                              showDialog(
+                                context: context,
+                                builder: (c) => SystemVoiceBrowserDialog(ttsService: widget.ttsService),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white.withOpacity(0.04)
+                                    : Colors.black.withOpacity(0.03),
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                              child: Row(
                                 children: [
-                                  Text(
-                                    '$displayName ${persona.gender == VoiceGender.male ? '👨' : persona.gender == VoiceGender.female ? '👩' : '🤖'}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: AppSizes.fontMdLg,
-                                      fontWeight: FontWeight.bold,
+                                  CircleAvatar(
+                                    radius: 14,
+                                    backgroundColor: persona.accentColor.withOpacity(0.2),
+                                    child: Icon(persona.icon, size: 14, color: persona.accentColor),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          displayName,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: const TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Text(
+                                          displayTag,
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            color: theme.colorScheme.onSurface.withOpacity(0.55),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                  Text(
-                                    '$displayTag • ${strings.tapToChange}',
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: TextStyle(
-                                      fontSize: AppSizes.fontSm,
-                                      color: theme.colorScheme.onSurface.withValues(alpha: 0.55),
-                                    ),
+                                  Icon(
+                                    Icons.unfold_more_rounded,
+                                    size: 16,
+                                    color: theme.colorScheme.onSurface.withOpacity(0.4),
                                   ),
                                 ],
                               ),
                             ),
-                            Icon(
-                              Icons.keyboard_arrow_up_rounded,
-                              size: AppSizes.iconMd,
-                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.md),
-
-                  InkWell(
-                    onTap: () {
-                      setState(() => _showSpeedScroll = !_showSpeedScroll);
-                    },
-                    borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSizes.md, vertical: AppSizes.md),
-                      decoration: BoxDecoration(
-                        color: _showSpeedScroll
-                            ? persona.accentColor.withValues(alpha: 0.18)
-                            : (isDark ? AppColors.darkCard : Colors.grey.shade100),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
-                        border: Border.all(
-                          color: _showSpeedScroll
-                              ? persona.accentColor
-                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.speed_rounded,
-                            size: AppSizes.iconSm,
-                            color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
                           ),
-                          const SizedBox(width: AppSizes.xs),
-                          Text(
-                            '${widget.ttsService.rate.toStringAsFixed(2)}x',
-                            style: TextStyle(
-                              fontSize: AppSizes.fontBase,
-                              fontWeight: FontWeight.bold,
-                              color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
+                        ),
+                        const SizedBox(width: 6),
+
+                        // Middle-1: Speed Pill Button
+                        InkWell(
+                          onTap: _toggleSpeed,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: _showSpeedScroll
+                                  ? persona.accentColor.withOpacity(0.2)
+                                  : isDark
+                                      ? Colors.white.withOpacity(0.05)
+                                      : Colors.black.withOpacity(0.03),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: _showSpeedScroll
+                                    ? persona.accentColor.withOpacity(0.6)
+                                    : Colors.transparent,
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.speed_rounded,
+                                  size: 14,
+                                  color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
+                                ),
+                                const SizedBox(width: 3),
+                                Text(
+                                  '${widget.ttsService.rate.toStringAsFixed(1)}x',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: _showSpeedScroll ? persona.accentColor : theme.colorScheme.onSurface,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-
-                  IconButton(
-                    tooltip: strings.adjustPitch,
-                    icon: Icon(
-                      Icons.tune_rounded,
-                      color: _showFineTuning ? theme.colorScheme.primary : theme.colorScheme.onSurface,
-                    ),
-                    style: IconButton.styleFrom(
-                      backgroundColor: _showFineTuning
-                          ? theme.colorScheme.primary.withValues(alpha: 0.15)
-                          : (isDark ? AppColors.darkCard : Colors.grey.shade100),
-                    ),
-                    onPressed: () {
-                      setState(() => _showFineTuning = !_showFineTuning);
-                    },
-                  ),
-                  const SizedBox(width: AppSizes.sm),
-
-                  if (widget.ttsService.isPlaying || widget.ttsService.isPaused) ...[
-                    IconButton(
-                      tooltip: strings.stop,
-                      icon: const Icon(Icons.stop_rounded, color: AppColors.stop),
-                      style: IconButton.styleFrom(
-                        backgroundColor: AppColors.stop.withValues(alpha: 0.15),
-                      ),
-                      onPressed: () => widget.ttsService.stop(),
-                    ),
-                    const SizedBox(width: AppSizes.sm),
-                  ],
-
-                  InkWell(
-                    onTap: () {
-                      if (widget.ttsService.isPlaying) {
-                        widget.ttsService.pause();
-                      } else {
-                        if (widget.onSpeakRequested != null) {
-                          widget.onSpeakRequested!();
-                        } else {
-                          widget.ttsService.speak(widget.textToSpeak);
-                        }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(AppSizes.radiusXxl),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSizes.iconMd, vertical: AppSizes.xl),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            persona.accentColor,
-                            persona.accentColor.withValues(alpha: 0.8),
-                          ],
                         ),
-                        borderRadius: BorderRadius.circular(AppSizes.radiusXxl),
-                        boxShadow: [
-                          BoxShadow(
-                            color: persona.accentColor.withValues(alpha: 0.4),
-                            blurRadius: AppSizes.radiusMd,
-                            offset: const Offset(0, 4),
+                        const SizedBox(width: 4),
+
+                        // Middle-2: Tune Button
+                        IconButton(
+                          tooltip: strings.adjustPitch,
+                          padding: const EdgeInsets.all(7),
+                          constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                          icon: Icon(
+                            Icons.tune_rounded,
+                            size: 16,
+                            color: _showFineTuning ? theme.colorScheme.primary : theme.colorScheme.onSurface.withOpacity(0.7),
                           ),
+                          style: IconButton.styleFrom(
+                            backgroundColor: _showFineTuning
+                                ? theme.colorScheme.primary.withOpacity(0.2)
+                                : isDark
+                                    ? Colors.white.withOpacity(0.05)
+                                    : Colors.black.withOpacity(0.03),
+                          ),
+                          onPressed: _toggleFineTuning,
+                        ),
+                        const SizedBox(width: 4),
+
+                        // Optional Stop Button
+                        if (isPlaying || isPaused) ...[
+                          IconButton(
+                            tooltip: strings.stop,
+                            padding: const EdgeInsets.all(7),
+                            constraints: const BoxConstraints(minWidth: 34, minHeight: 34),
+                            icon: const Icon(Icons.stop_rounded, size: 16, color: AppColors.stop),
+                            style: IconButton.styleFrom(
+                              backgroundColor: AppColors.stop.withOpacity(0.15),
+                            ),
+                            onPressed: () {
+                              HapticFeedback.mediumImpact();
+                              widget.ttsService.stop();
+                            },
+                          ),
+                          const SizedBox(width: 4),
                         ],
-                      ),
-                      child: Row(
-                        children: [
-                          Icon(
-                            widget.ttsService.isPlaying
-                                ? Icons.pause_rounded
-                                : Icons.play_arrow_rounded,
-                            color: Colors.white,
-                            size: AppSizes.iconLg,
-                          ),
-                          const SizedBox(width: AppSizes.xs),
-                          Text(
-                            sayItText,
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: AppSizes.fontMdLg,
+
+                        // Master Action Button (Play / Pause / Resume)
+                        InkWell(
+                          onTap: () {
+                            HapticFeedback.mediumImpact();
+                            if (widget.ttsService.isPlaying) {
+                              widget.ttsService.pause();
+                            } else {
+                              if (widget.onSpeakRequested != null) {
+                                widget.onSpeakRequested!();
+                              } else {
+                                widget.ttsService.speak(widget.textToSpeak);
+                              }
+                            }
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  persona.accentColor,
+                                  persona.accentColor.withOpacity(0.85),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: persona.accentColor.withOpacity(isPlaying ? 0.5 : 0.3),
+                                  blurRadius: isPlaying ? 12 : 6,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isPlaying
+                                      ? Icons.pause_rounded
+                                      : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  sayItText,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ],
+            ),
           ),
         ),
       ),

@@ -36,10 +36,9 @@ class AppSizes {
   /// Minimum comfortable tap target (Material guidance: 48dp).
   static const double minTouchTarget = 48.0;
 
-  /// Scroll content must clear the sticky bottom player bar (which includes
-  /// the speed section + visualizer + controls + safe area) so nothing can
-  /// ever hide behind it while scrolling.
-  static const double playerBarClearance = 336.0;
+  /// Scroll content clears the floating bottom player bar comfortably without
+  /// excessive empty bottom space.
+  static const double playerBarClearance = 180.0;
 
   // ── Border Radius ────────────────────────────────────
   static const double radiusSm  = 8.0;

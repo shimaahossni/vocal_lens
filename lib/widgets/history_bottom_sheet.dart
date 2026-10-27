@@ -34,7 +34,7 @@ class HistoryBottomSheet extends StatelessWidget {
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                color: theme.colorScheme.onSurface.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -75,14 +75,14 @@ class HistoryBottomSheet extends StatelessWidget {
                     Icon(
                       Icons.history_toggle_off_rounded,
                       size: 48,
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
                     ),
                     const SizedBox(height: 12),
                     Text(
                       'No speech history yet',
                       style: TextStyle(
                         fontSize: 15,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                        color: theme.colorScheme.onSurface.withOpacity(0.6),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -90,7 +90,7 @@ class HistoryBottomSheet extends StatelessWidget {
                       'Scan a photo or type text and speak to save here',
                       style: TextStyle(
                         fontSize: 12,
-                        color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                        color: theme.colorScheme.onSurface.withOpacity(0.4),
                       ),
                     ),
                   ],
@@ -123,7 +123,7 @@ class HistoryBottomSheet extends StatelessWidget {
                       color: isDark ? const Color(0xFF1E2433) : Colors.grey.shade50,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? Colors.white.withValues(alpha: 0.06) : Colors.black.withValues(alpha: 0.05),
+                        color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
                       ),
                     ),
                     child: Column(
@@ -134,7 +134,7 @@ class HistoryBottomSheet extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(6),
                               decoration: BoxDecoration(
-                                color: sourceColor.withValues(alpha: 0.15),
+                                color: sourceColor.withOpacity(0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: Icon(sourceIcon, size: 14, color: sourceColor),
@@ -153,7 +153,7 @@ class HistoryBottomSheet extends StatelessWidget {
                               '${item.wordCount} words',
                               style: TextStyle(
                                 fontSize: 11,
-                                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                                color: theme.colorScheme.onSurface.withOpacity(0.5),
                               ),
                             ),
                           ],
@@ -166,7 +166,7 @@ class HistoryBottomSheet extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 13,
                             height: 1.3,
-                            color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+                            color: theme.colorScheme.onSurface.withOpacity(0.85),
                           ),
                         ),
                         const SizedBox(height: 10),

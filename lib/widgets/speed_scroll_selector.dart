@@ -58,30 +58,37 @@ class SpeedScrollSelector extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              children: [
-                Icon(Icons.speed_rounded, size: 16, color: accentColor),
-                const SizedBox(width: 6),
-                Text(
-                  isArabic ? 'سرعة النطق' : 'Voice Speed Scroll',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
+            Expanded(
+              child: Row(
+                children: [
+                  Icon(Icons.speed_rounded, size: 16, color: accentColor),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      isArabic ? 'سرعة النطق' : 'Voice Speed',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2.5),
               decoration: BoxDecoration(
-                color: accentColor.withValues(alpha: 0.15),
+                color: accentColor.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 (currentRate - 1.00).abs() < 0.04
-                    ? (isArabic ? '1.00x سرعة مثالية ✨' : '1.00x Natural Speed ✨')
-                    : '${currentRate.toStringAsFixed(2)}x ${isArabic ? "سرعة" : "Speed"}',
+                    ? (isArabic ? '1.00x سرعة طبيعية ✨' : '1.00x Natural ✨')
+                    : '${currentRate.toStringAsFixed(2)}x',
                 style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -120,14 +127,14 @@ class SpeedScrollSelector extends StatelessWidget {
                       color: isSelected
                           ? accentColor
                           : isDefaultNormal
-                              ? accentColor.withValues(alpha: 0.4)
-                              : (isDark ? Colors.white.withValues(alpha: 0.08) : Colors.black.withValues(alpha: 0.06)),
+                              ? accentColor.withOpacity(0.4)
+                              : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
                       width: isSelected ? 1.5 : (isDefaultNormal ? 1.2 : 1),
                     ),
                     boxShadow: [
                       if (isSelected)
                         BoxShadow(
-                          color: accentColor.withValues(alpha: 0.35),
+                          color: accentColor.withOpacity(0.35),
                           blurRadius: 8,
                           offset: const Offset(0, 2),
                         ),
@@ -160,9 +167,9 @@ class SpeedScrollSelector extends StatelessWidget {
           SliderTheme(
             data: SliderTheme.of(context).copyWith(
               activeTrackColor: accentColor,
-              inactiveTrackColor: accentColor.withValues(alpha: 0.15),
+              inactiveTrackColor: accentColor.withOpacity(0.15),
               thumbColor: accentColor,
-              overlayColor: accentColor.withValues(alpha: 0.2),
+              overlayColor: accentColor.withOpacity(0.2),
               trackHeight: 3.5,
               thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
             ),
