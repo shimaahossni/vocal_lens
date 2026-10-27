@@ -3,6 +3,9 @@
 # Fail this script if any subcommand fails.
 set -e
 
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
+
 echo "=== Xcode Cloud: Starting Flutter Post-Clone Setup ==="
 
 # Navigate to the repository root.
@@ -32,6 +35,10 @@ flutter precache --ios
 # Fetch Flutter dependencies
 echo "Fetching Flutter dependencies..."
 flutter pub get
+
+# Generate iOS ephemeral files and build configurations without performing full compile
+echo "Generating Flutter iOS build configurations..."
+flutter build ios --config-only --no-codesign
 
 # Ensure CocoaPods is installed
 if ! command -v pod > /dev/null 2>&1; then
