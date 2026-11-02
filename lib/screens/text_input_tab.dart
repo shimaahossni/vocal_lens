@@ -207,12 +207,12 @@ class _TextInputTabState extends State<TextInputTab> {
                             gradient: isCurrent ? AppColors.primaryGradient : null,
                             color: isCurrent
                                 ? null
-                                : (isDark ? AppColors.darkCard : Colors.white),
+                                : (isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9)),
                             borderRadius: BorderRadius.circular(14),
                             border: Border.all(
                               color: isCurrent
                                   ? AppColors.primary
-                                  : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
+                                  : (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)),
                             ),
                             boxShadow: isCurrent
                                 ? [
@@ -360,7 +360,7 @@ class _TextInputTabState extends State<TextInputTab> {
                     hintText: strings.textInputHint,
                     hintStyle: TextStyle(
                       fontSize: 13,
-                      color: theme.colorScheme.onSurface.withOpacity(0.35),
+                      color: theme.colorScheme.onSurface.withOpacity(0.5),
                     ),
                     filled: true,
                     fillColor: isDark ? AppColors.darkInput : const Color(0xFFF8FAFC),
@@ -368,7 +368,7 @@ class _TextInputTabState extends State<TextInputTab> {
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
                       borderSide: BorderSide(
-                        color: isDark ? Colors.white.withOpacity(0.04) : Colors.black.withOpacity(0.04),
+                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06),
                       ),
                     ),
                     focusedBorder: OutlineInputBorder(
@@ -389,7 +389,7 @@ class _TextInputTabState extends State<TextInputTab> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.04),
+                        color: isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(

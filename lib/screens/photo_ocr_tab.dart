@@ -402,10 +402,14 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> with SingleTickerProviderStat
                       ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: theme.colorScheme.onSurface,
+                        backgroundColor: isDark
+                            ? Colors.white.withOpacity(0.06)
+                            : Colors.black.withOpacity(0.03),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         side: BorderSide(
-                          color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.12),
+                          color: isDark ? Colors.white.withOpacity(0.20) : Colors.black.withOpacity(0.18),
+                          width: 1.2,
                         ),
                       ),
                     ),
@@ -801,7 +805,7 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> with SingleTickerProviderStat
                   hintText: strings.ocrHint,
                   hintStyle: TextStyle(
                     fontSize: 13,
-                    color: theme.colorScheme.onSurface.withOpacity(0.35),
+                    color: theme.colorScheme.onSurface.withOpacity(0.5),
                   ),
                   filled: true,
                   fillColor: isDark ? const Color(0xFF10131D) : Colors.grey.shade50,
@@ -809,13 +813,13 @@ class _PhotoOcrTabState extends State<PhotoOcrTab> with SingleTickerProviderStat
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06),
+                      color: isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.08),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
                     borderSide: BorderSide(
-                      color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.06),
+                      color: isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.08),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(

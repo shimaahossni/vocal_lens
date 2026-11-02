@@ -128,7 +128,7 @@ class SpeedScrollSelector extends StatelessWidget {
                           ? accentColor
                           : isDefaultNormal
                               ? accentColor.withOpacity(0.4)
-                              : (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.06)),
+                              : (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)),
                       width: isSelected ? 1.5 : (isDefaultNormal ? 1.2 : 1),
                     ),
                     boxShadow: [

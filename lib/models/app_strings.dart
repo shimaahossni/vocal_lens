@@ -6,8 +6,8 @@ class AppStrings {
   // App Bar
   String get appTitle => 'VocalLens';
   String get appSubtitle => isArabic
-      ? 'تحويل الصور والنصوص إلى صوت بأصوات رجال ونساء'
-      : 'Photo & Text Speech with Men & Women Sounds';
+      ? 'تحويل الصور والنصوص إلى صوت'
+      : 'Photo & Text to Speech';
   String get aiBadge => isArabic ? 'ذكاء اصطناعي' : 'AI VOICE';
 
   // Tabs

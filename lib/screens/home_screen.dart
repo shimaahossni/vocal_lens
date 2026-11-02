@@ -241,15 +241,16 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                         ),
                       ],
                     ),
-                    Text(
-                      strings.appSubtitle,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: theme.colorScheme.onSurface.withOpacity(0.55),
+                    if (MediaQuery.of(context).size.width >= 400)
+                      Text(
+                        strings.appSubtitle,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          fontSize: 10,
+                          color: theme.colorScheme.onSurface.withOpacity(0.65),
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),
@@ -383,10 +384,10 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
               margin: const EdgeInsets.symmetric(horizontal: AppSizes.screenPadding, vertical: 6),
               padding: const EdgeInsets.all(4),
               decoration: BoxDecoration(
-                color: isDark ? AppColors.darkCard : const Color(0xFFF1F5F9),
+                color: isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFF1F5F9),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04),
+                  color: isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08),
                 ),
               ),
               child: TabBar(
@@ -405,7 +406,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
                   ],
                 ),
                 labelColor: Colors.white,
-                unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.65),
+                unselectedLabelColor: theme.colorScheme.onSurface.withOpacity(0.75),
                 labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 tabs: [
                   Tab(

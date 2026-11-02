@@ -240,8 +240,8 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> with SingleTickerProvid
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                               decoration: BoxDecoration(
                                 color: isDark
-                                    ? Colors.white.withOpacity(0.04)
-                                    : Colors.black.withOpacity(0.03),
+                                    ? Colors.white.withOpacity(0.08)
+                                    : Colors.black.withOpacity(0.05),
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               child: Row(
@@ -300,8 +300,8 @@ class _VoicePlayerBarState extends State<VoicePlayerBar> with SingleTickerProvid
                               color: _showSpeedScroll
                                   ? persona.accentColor.withOpacity(0.2)
                                   : isDark
-                                      ? Colors.white.withOpacity(0.05)
-                                      : Colors.black.withOpacity(0.03),
+                                      ? Colors.white.withOpacity(0.08)
+                                      : Colors.black.withOpacity(0.05),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
                                 color: _showSpeedScroll

@@ -87,7 +87,7 @@ class PresetPhotoCarousel extends StatelessWidget {
                     border: Border.all(
                       color: isSelected
                           ? theme.colorScheme.primary
-                          : (isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.08)),
+                          : (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)),
                       width: isSelected ? 2.0 : 1.0,
                     ),
                     boxShadow: [

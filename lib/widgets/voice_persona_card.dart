@@ -60,7 +60,7 @@ class VoicePersonaCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: isSelected
               ? (isDark ? const Color(0xFF1B2234) : Colors.white)
-              : (isDark ? const Color(0xFF161A26) : Colors.white),
+              : (isDark ? const Color(0xFF172036) : Colors.white),
           borderRadius: BorderRadius.circular(AppSizes.radiusXl),
           gradient: isSelected
               ? LinearGradient(
@@ -75,7 +75,7 @@ class VoicePersonaCard extends StatelessWidget {
           border: Border.all(
             color: isSelected
                 ? persona.accentColor
-                : (isDark ? Colors.white.withOpacity(0.07) : Colors.black.withOpacity(0.06)),
+                : (isDark ? Colors.white.withOpacity(0.12) : Colors.black.withOpacity(0.08)),
             width: isSelected ? 2.0 : 1.0,
           ),
           boxShadow: [
@@ -217,7 +217,7 @@ class VoicePersonaCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: isSelected
                       ? persona.accentColor
-                      : (isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.04)),
+                      : (isDark ? Colors.white.withOpacity(0.10) : Colors.black.withOpacity(0.06)),
                   borderRadius: BorderRadius.circular(10),
                   boxShadow: isSelected
                       ? [

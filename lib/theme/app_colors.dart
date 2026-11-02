@@ -47,4 +47,18 @@ class AppColors {
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
+
+  // Inactive & Pill element contrast (improved accessibility & WCAG contrast)
+  static const double inactiveBgOpacityDark = 0.08; // Base opacity >= 0.08 in dark mode
+  static const double inactiveBgOpacityLight = 0.05;
+  static const double inactiveBorderOpacityDark = 0.12; // Base border opacity >= 0.12 in dark mode
+  static const double inactiveBorderOpacityLight = 0.08;
+
+  /// Helper for inactive element background with accessible contrast
+  static Color inactiveBackground(bool isDark) =>
+      isDark ? Colors.white.withOpacity(inactiveBgOpacityDark) : Colors.black.withOpacity(inactiveBgOpacityLight);
+
+  /// Helper for inactive element border with accessible contrast
+  static Color inactiveBorder(bool isDark) =>
+      isDark ? Colors.white.withOpacity(inactiveBorderOpacityDark) : Colors.black.withOpacity(inactiveBorderOpacityLight);
 }
