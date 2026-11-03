@@ -44,6 +44,14 @@ else
     flutter build ios --config-only --no-codesign
 fi
 
+# Ensure AppFrameworkInfo.plist explicitly specifies MinimumOSVersion (fixes ITMS-90530, ITMS-90360, ITMS-90208)
+PLIST_FILE="${REPO_ROOT}/ios/Flutter/AppFrameworkInfo.plist"
+if [ -f "$PLIST_FILE" ]; then
+    /usr/libexec/PlistBuddy -c "Set :MinimumOSVersion 15.0" "$PLIST_FILE" 2>/dev/null || \
+    /usr/libexec/PlistBuddy -c "Add :MinimumOSVersion string 15.0" "$PLIST_FILE" 2>/dev/null || true
+    echo "Configured MinimumOSVersion 15.0 in $PLIST_FILE"
+fi
+
 # ── Ensure CocoaPods is installed ─────────────────────────────────────────────
 if ! command -v pod > /dev/null 2>&1; then
     echo "CocoaPods not found. Installing via Homebrew..."

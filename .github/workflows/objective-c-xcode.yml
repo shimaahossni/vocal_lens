@@ -1,30 +1,154 @@
-name: Xcode - Build and Analyze
+name: Trigger Xcode Cloud Build
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
+      - main
   pull_request:
-    branches: [ "master" ]
+    branches:
+      - master
+      - main
+
+# Prevent multiple builds running for the same branch simultaneously.
+concurrency:
+  group: xcode-cloud-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build and analyse default scheme using xcodebuild command
-    runs-on: macos-latest
-
+  # ─────────────────────────────────────────────────────────────────
+  # Job 1: Fast Flutter analysis (no macOS runner needed → cheaper)
+  # ─────────────────────────────────────────────────────────────────
+  flutter-analyze:
+    name: Flutter Analyze & Test
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Set Default Scheme
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.3"
+          channel: "stable"
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Run unit tests
+        run: flutter test --no-pub
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 2: Trigger an Xcode Cloud build via App Store Connect API.
+  #
+  # Required GitHub Secrets (set in repo Settings → Secrets):
+  #   ASC_KEY_ID          – App Store Connect API Key ID (e.g. ABC1234567)
+  #   ASC_ISSUER_ID       – Issuer ID from App Store Connect → Users → API Keys
+  #   ASC_PRIVATE_KEY     – Full content of the .p8 private key file
+  #   ASC_WORKFLOW_ID     – Xcode Cloud Workflow ID (see README for how to find it)
+  #
+  # Skip this job if the secrets are not configured yet by checking
+  # for the presence of ASC_KEY_ID.
+  # ─────────────────────────────────────────────────────────────────
+  trigger-xcode-cloud:
+    name: Trigger Xcode Cloud
+    runs-on: ubuntu-latest
+    needs: flutter-analyze          # only trigger after Flutter analysis passes
+    if: >
+      github.event_name == 'push' &&
+      (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main') &&
+      secrets.ASC_KEY_ID != ''
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install jwt-creator dependencies
         run: |
-          scheme_list=$(xcodebuild -list -json | tr -d "\n")
-          default=$(echo $scheme_list | ruby -e "require 'json'; puts JSON.parse(STDIN.gets)['project']['targets'][0]")
-          echo $default | cat >default
-          echo Using default scheme: $default
-      - name: Build
+          pip install PyJWT cryptography --quiet
+
+      - name: Generate App Store Connect JWT
+        id: jwt
         env:
-          scheme: ${{ 'default' }}
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          ASC_PRIVATE_KEY: ${{ secrets.ASC_PRIVATE_KEY }}
         run: |
-          if [ $scheme = default ]; then scheme=$(cat default); fi
-          if [ "`ls -A | grep -i \\.xcworkspace\$`" ]; then filetype_parameter="workspace" && file_to_build="`ls -A | grep -i \\.xcworkspace\$`"; else filetype_parameter="project" && file_to_build="`ls -A | grep -i \\.xcodeproj\$`"; fi
-          file_to_build=`echo $file_to_build | awk '{$1=$1;print}'`
-          xcodebuild clean build analyze -scheme "$scheme" -"$filetype_parameter" "$file_to_build" | xcpretty && exit ${PIPESTATUS[0]}
+          python3 - <<'EOF'
+          import os, time, jwt
+
+          key_id    = os.environ["ASC_KEY_ID"]
+          issuer_id = os.environ["ASC_ISSUER_ID"]
+          private_key = os.environ["ASC_PRIVATE_KEY"].replace("\\n", "\n")
+
+          now = int(time.time())
+          payload = {
+              "iss": issuer_id,
+              "iat": now,
+              "exp": now + 20 * 60,     # valid for 20 minutes
+              "aud": "appstoreconnect-v1"
+          }
+
+          token = jwt.encode(
+              payload,
+              private_key,
+              algorithm="ES256",
+              headers={"kid": key_id}
+          )
+
+          # Write token to GITHUB_OUTPUT
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write(f"token={token}\n")
+          print("✅ JWT generated successfully")
+          EOF
+
+      - name: Trigger Xcode Cloud Build via App Store Connect API
+        env:
+          JWT_TOKEN: ${{ steps.jwt.outputs.token }}
+          ASC_WORKFLOW_ID: ${{ secrets.ASC_WORKFLOW_ID }}
+        run: |
+          echo "Triggering Xcode Cloud build for workflow: $ASC_WORKFLOW_ID"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            "https://api.appstoreconnect.apple.com/v1/ciBuildRuns" \
+            -H "Authorization: Bearer $JWT_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"data\": {
+                \"type\": \"ciBuildRuns\",
+                \"relationships\": {
+                  \"workflow\": {
+                    \"data\": {
+                      \"type\": \"ciWorkflows\",
+                      \"id\": \"$ASC_WORKFLOW_ID\"
+                    }
+                  }
+                }
+              }
+            }")
+
+          HTTP_STATUS=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | head -n-1)
+
+          echo "HTTP Status: $HTTP_STATUS"
+          echo "Response: $BODY"
+
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+            echo "✅ Xcode Cloud build triggered successfully!"
+          else
+            echo "❌ Failed to trigger Xcode Cloud build (HTTP $HTTP_STATUS)"
+            exit 1
+          fi
+
+      - name: Post build link as summary
+        if: success()
+        run: |
+          echo "## 🚀 Xcode Cloud Build Triggered" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "A new Xcode Cloud build was started for commit \`${{ github.sha }}\`." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "👉 [View in App Store Connect](https://appstoreconnect.apple.com/teams/${{ secrets.ASC_TEAM_ID }}/xcode-cloud)" >> $GITHUB_STEP_SUMMARY
