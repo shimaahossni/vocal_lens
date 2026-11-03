@@ -485,7 +485,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"OTHER_LDFLAGS[arch=*]" = "-Wl,-ld_classic";
+				"OTHER_LDFLAGS[arch=*]" = (
+					"$(inherited)",
+					"-Wl,-ld_classic",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vocalphoto.vocalLens;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -684,7 +687,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"OTHER_LDFLAGS[arch=*]" = "-Wl,-ld_classic";
+				"OTHER_LDFLAGS[arch=*]" = (
+					"$(inherited)",
+					"-Wl,-ld_classic",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vocalphoto.vocalLens;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -715,7 +721,10 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				"OTHER_LDFLAGS[arch=*]" = "-Wl,-ld_classic";
+				"OTHER_LDFLAGS[arch=*]" = (
+					"$(inherited)",
+					"-Wl,-ld_classic",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.vocalphoto.vocalLens;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
