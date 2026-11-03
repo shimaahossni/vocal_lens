@@ -40,40 +40,40 @@ post_install do |installer|
     flutter_additional_ios_build_settings(target)
     target.build_configurations.each do |config|
       config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
-
-      # Disable code signing for resource bundles only (not app targets).
-      # Applying CODE_SIGNING_ALLOWED=NO globally breaks App Store Connect upload.
-      if target.respond_to?(:product_type) && target.product_type == "com.apple.product-type.bundle"
-        config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
-        config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
-        config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''
-      end
-
-      # Fix for MLKit/Google frameworks that lack a platform load command.
-      # -ld_classic is deprecated in Xcode 16+; use linker flags to suppress the
-      # "no platform load command" warning instead.
-      if target.name.include?('MLKit') || target.name.include?('GoogleMLKit') ||
-         target.name.include?('mlkit') || target.name.include?('GoogleDataTransport') ||
-         target.name.include?('GTMSessionFetcher') || target.name.include?('SDWebImage')
-        config.build_settings['OTHER_LDFLAGS'] = '$(inherited) -w'
-      end
+      # Standard Flutter convention: disable code signing for ALL pod targets.
+      # Xcode Cloud / the Runner app re-signs everything during archiving.
+      config.build_settings['EXPANDED_CODE_SIGN_IDENTITY'] = ''
+      config.build_settings['CODE_SIGNING_REQUIRED'] = 'NO'
+      config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
     end
   end
 
-  # Patch pre-compiled MLKit frameworks to inject the iOS platform version
-  # so the linker no longer warns "no platform load command found".
-  require 'open3'
-  mlkit_fw_dir = File.join(installer.sandbox.root, 'MLKitTextRecognitionCommon', 'Frameworks')
-  if Dir.exist?(mlkit_fw_dir)
-    Dir.glob(File.join(mlkit_fw_dir, '**', '*.framework')).each do |fw|
-      binary = File.join(fw, File.basename(fw, '.framework'))
-      if File.exist?(binary)
-        stdout, stderr, status = Open3.capture3("vtool -show-build \"#{binary}\" 2>&1")
-        unless stdout.include?('platform iOS') || stdout.include?('IPHONE')
-          system("vtool -arch arm64 -set-build-version ios 15.0 15.0 -replace -output \"#{binary}\" \"#{binary}\" 2>/dev/null || true")
-          system("vtool -arch x86_64 -set-build-version iossimulator 15.0 15.0 -replace -output \"#{binary}\" \"#{binary}\" 2>/dev/null || true")
-        end
-      end
-    end
+  # ── Patch pre-compiled frameworks missing a platform load command ──────────
+  # Xcode 16+ dropped the -ld_classic linker. The new linker (ld_prime) treats
+  # "no platform load command" as a hard error for frameworks like MLKit 3.0.0.
+  # Fix: use xcrun vtool to inject the iOS build-version into every affected
+  # binary, then ad-hoc re-sign so the binary stays valid until Xcode Cloud
+  # replaces it with the distribution signature during archiving.
+  puts "=== Patching frameworks missing platform load commands ==="
+  pods_root = installer.sandbox.root.to_s
+
+  Dir.glob(File.join(pods_root, '**', '*.framework')).each do |fw_path|
+    fw_name = File.basename(fw_path, '.framework')
+    binary  = File.join(fw_path, fw_name)
+    next unless File.exist?(binary)
+    next unless `file "#{binary}" 2>/dev/null`.include?('Mach-O')
+
+    build_info = `xcrun vtool -show-build "#{binary}" 2>/dev/null`
+    next if build_info.match?(/PLATFORM/i)
+
+    puts "  Patching: #{fw_name}"
+    # Remove existing ad-hoc / dev signature (vtool will invalidate it)
+    system("xcrun codesign --remove-signature \"#{binary}\" 2>/dev/null")
+    # Inject iOS platform load command for arm64 (device slice)
+    system("xcrun vtool -arch arm64 -set-build-version ios 15.0 15.0 -replace -output \"#{binary}\" \"#{binary}\" 2>/dev/null")
+    # Restore an ad-hoc signature so Xcode can load the binary
+    system("xcrun codesign -f -s - \"#{binary}\" 2>/dev/null")
+    puts "    ✅ Done"
   end
+  puts "=== Framework patching complete ==="
 end
